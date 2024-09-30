@@ -1,0 +1,112 @@
+특징
+원자성 atomicity
+일관성 consistency
+독립성 isolation
+지속성 durability
+
+상태
+active : 활성
+partially commited : 부분 완료
+commited : 완료
+failed : 실패
+aborted : 철회
+
+병행제어
+locking
+로킹 단위가 내려가면 동시성, 오버헤드 올라감
+로킹 단위가 올라가면 동시성, 오버헤드 내려감
+
+time stamp : 순서대로 (시간을 미리 정해서)
+
+TCL은 DCL에 속함
+TCL - commit
+DCL - grant
+DML - create
+DDL - alter
+
+commit은 auto commit을 지원한다
+
+savepoint : 시점 저장, 트랜잭션을 분할
+
+트랜잭션 시작 : start transaction
+트랜잭션 종료 : commit
+
+super key : 하나의 키 값으로 튜플을 유일하게 식별
+candidate key : 키를 구성하는 속성 중 꼭 필요한 최소한의 속성으로 구성
+
+primary key (A,B,C) D = A,B,C -> D (완전 함수적 종속)
+primary key(A,B) C = A -> C, B -> C (부분 함수적 종속)
+primary key가 전부 한가지 속성이면 부분 함수적 종속은 존재할 수 없다.
+X -> Y, Y -> Z, X -> Z, X -> Y -> Z (이행 함수적 종속)
+
+정규화 : 함수적 종속 -> 정규화
+--------------------------------------------------------------------------------------------------------
+drop database if exists Day06;
+create database Day06;
+use Day06;
+
+create table Day_TR(
+	c1 int);
+
+start transaction; # 트랜잭션 시작
+insert into Day_TR values(1), (2), (3), (4);
+savepoint A; # A 시점(1,2,3,4)
+
+insert into Day_TR values(5), (6), (7), (8);
+savepoint B; # B 시점(1,2,3,4,5,6,7,8)
+
+select * from Day_TR;
+
+rollback to A; # A 시점으로 돌아가기
+
+select * from Day_TR;
+
+commit; # 트랜잭션 종료, 이전 savepoint 소멸
+
+# rollback to A; 오류 발생 -> savepoint 소멸
+
+truncate table Day_TR;
+# 1
+# 트랜잭션 시작
+start transaction;
+# 테이블에 1,2,3,4 삽입
+insert into Day_TR values (1), (2), (3), (4);
+# 시점 A 생성
+savepoint A;
+# 테이블에 5,6 삽입
+insert into Day_TR values (5), (6);
+# 시점 B 생성
+savepoint B;
+# 테이블에 7,8 삽입
+insert into Day_TR values (7), (8);
+# 테이블 조회
+select * from Day_TR;
+# B 시점으로 돌아가기
+rollback to B;
+# 테이블 조회
+select * from Day_TR;
+# 트랜잭션 종료
+commit;
+
+truncate table Day_TR;
+-- 2
+-- 트랜잭션 시작
+start transaction;
+-- 1,10 삽입
+insert into Day_TR values (1), (10);
+-- A 시점 생성
+savepoint A;
+-- 10을 5로 수정
+set SQL_SAFE_UPDATES = 0;
+update Day_TR set c1 = 5 where c1 = 10;
+set SQL_SAFE_UPDATES = 1;
+-- B 시점 생성
+savepoint B;
+-- 10,15 삽입
+insert into Day_TR values (10), (15);
+-- C 시점 생성
+savepoint C;
+-- 트랜잭션 종료
+commit;
+-- C로 롤백
+rollback to C; # 오류 발생 -> 트랜잭션이 종료되었기 때문에 C 시점으로 돌아갈 수 없음
