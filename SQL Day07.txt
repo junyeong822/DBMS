@@ -1,0 +1,400 @@
+Day 07
+
+drop database if exists Day07;
+create database Day07;
+use Day07;
+
+create table dept(
+    id int primary key auto_increment,
+    name varchar(10) not null);
+
+create table emp(
+    id int primary key auto_increment,
+    name varchar(10) not null,
+    regdate date default (current_date),
+    dept_id int,
+    foreign key(dept_id) references dept(id) on update cascade on delete cascade);
+
+insert into dept(name) values('인사'),
+                             ('총무'),
+                             ('개발'),
+                             ('교육'),
+                             ('운영'),
+                             ('계획'),
+                             ('회계'),
+                             ('전산'),
+                             ('영업'),
+                             ('생산');
+                             
+
+insert into emp(name, dept_id) values ('Aaron', 1),
+                                      ('Abraham', 1),
+                                      ('Adam', 1),
+                                     
+                                      ('Alan', 2),
+                                      ('Albert', 2),
+                                      ('Alfred', 2),
+                                     
+                                      ('Alexander', 3),
+                                      ('Andrew', 3),
+                                      ('Antony', 3),
+                                     
+                                      ('Arnold', 4),
+                                      ('Arthur', 4),
+                                      ('Benedict', 4),
+                                     
+                                      ('Benjamin', 5),
+                                      ('Cecil', 5),
+                                      ('Charles', 5),
+                                     
+                                      ('Claude', 6),
+                                      ('Conrad', 6),
+                                      ('Daniel', 6),
+                               
+                                      ('David', 7),
+                                      ('Donald', 7),
+                                      ('Douglas', 7),
+                                     
+                                      ('Duncan', 8),
+                                      ('Edgar', 8),
+                                      ('Edmund', 8),
+                                     
+                                      ('Edward', 9),
+                                      ('Edwin', 9),
+                                      ('Enoch', 9),
+                                     
+                                      ('Eugene', 10),
+                                      ('Evelyn', 10),
+                                      ('Ferdianand', 10);
+                                      
+select * from emp; # select를 진행하면 기본키를 기준으로 오름차순 정렬
+
+# desc : 내림차순
+select * from emp order by id desc;
+# asc : 오름차순 -> 생략 가능
+use world;
+select * from city order by name;
+select * from city order by name desc;
+
+# district 속성을 오름차순 정렬하되, 같은 값이 나온다면 id를 기준으로 내림차순 정렬하겠다.
+select * from city order by district asc, id desc;
+
+# 가장 많은 인구수를 가진 나라부터 내림차순으로 체크
+select name, population from country order by population desc;
+
+# 결과 튜플의 수를 10개로 제한
+select * from city limit 10;
+
+# 결과 튜플의 수를 5개로 제한
+select * from city limit 5;
+
+# 전 세계에서 가장 많은 인구수를 가진 나라 TOP 5
+select name, population from country order by population desc limit 5;
+
+-- 전 세계에서 가장 많은 인구수를 가진 도시 TOP 6
+select * from country order by population desc limit 6;
+-- 전 세계에서 가장 적은 인구수를 가진 도시 TOP 3
+select * from country order by population limit 3;
+-- 전 세계에서 가장 적은 넓이(surfacearea)를 가진 도시 TOP 10
+select * from country order by surfacearea desc limit 10;
+
+# count : 결과 튜을의 개수 확인
+select count(*) from city;
+
+select countrycode from city;
+select count(countrycode) from city;
+
+# distinct 위치 주의 : count 내부에 distinct가 들어가 있으면 중복을 제거하면서 가져옴
+# 하지만 count 밖에 distinct가 있다면 이미 가져온 개수 값에 중복 제거를 하는 것이기 때문에 의미 X
+select count(distinct countrycode) from city; # distinct : 중복 제거
+select distinct count(countrycode) from city;
+
+# 중복에 대해서
+create table A(
+	a int,
+    b int);
+    
+insert into A values (1, 2), (2, 1), (1, 1), (1, 2), (2, 2), (2, 1);
+select * from A;
+
+# 중복은 모든 속성 값이 동일해야 중복 판정을 받음
+select distinct * from A;
+
+select count(*) from country;
+select count(Indepyear) from country; # NULL 값을 제외하고 count
+
+# 대륙별 나라 개수
+select continent, count(*) from country group by continent;
+
+# 대륙별 인수구 합계
+select continent, sum(population) from country group by continent;
+# 대륙별 인수구 평균
+select continent, avg(population) from country group by continent;
+# 대륙별 인구수 최소값, 최대값
+select continent, min(population), max(population) from country group by continent;
+
+# 집계함수는 NULL 값을 무시하고 연산을 진행
+# 집계함수 -> sum, avg, count, min, max
+# COUNT(*)는 NULL 값을 포함
+
+select continent as '대륙',
+	   sum(population) as '합계',
+	   avg(population) as '평균',
+	   min(population) as '최소',
+	   max(population) as '최대', from country group by continent;
+       
+-- city 테이블에서 진행 나라(countrycode)별 인구수 함계
+select countrycode, sum(population) from city group by countrycode; 
+-- 평균
+select countrycode, avg(population) from city group by countrycode;
+-- 최소값
+select countrycode, min(population) from city group by countrycode;
+-- 최대값
+select countrycode, max(populaiton) from city group by countrycode;
+-- 도시 개수
+select countrycode, count(*) from city group by continent;
+-- 함계 평균 최소값 최대값 도시 개수까지 전체 검색(한번에)
+select countrycode as '나라',
+       count(*) as '도시 개수',
+       sum(population) as '인구수 합계',
+       avg(population) as '인구수 평균',
+       min(population) as '최소값',
+       max(population) as '최대값', from city group by countrycode;
+       
+# having : group by를 사용할 때 집계 속성(기준)에 대한 조건을 부여할 때
+# 기존에 존재하던 속성? X -> 새롭게 집계 함수를 이용해서 만들어낸 속성에 조건을 걸 때 having
+# 기존에 존재하던 속성에 조건을 걸 때 -> where
+
+select countrycode, count(*) as tmp from city
+group by countrycode having tmp >= 1;
+
+# 오류 발생 -> 기존에 존재하던 속성이기 때문에 where을 사용해야함
+-- select countrycode, count(*) as tmp from city
+-- group by countrycode having population >= 10;
+
+select countrycode, count(*) as tmp from city where population >= 10
+group by countrycode;
+
+select continent, count(*) as tmp from country
+group by continent having tmp >= 1;
+
+select countrycode, sum(population) as tmp from city
+group by countrycode having tmp < 100;
+
+show tables;
+select * from customers;
+select * from orders;
+
+select customer_id, count(*) tmp from orders
+group by customer_id;
+
+select product_name, sum(quantity) as tmp from orders
+group by product_name;
+
+select product_name, sum(quantity) as tmp, sum(price * quantity) as tmp2 from orders
+group by product_name;
+
+select * from orders;
+
+select quantity, count(*) as tmp from orders
+group by quantity having tmp >= 10;
+
+create table price(
+    ct1 varchar(10),
+    ct2 varchar(10),
+    cnt int);
+
+insert into price values
+('Book', 'A', 12),
+('Book', 'B', 8),
+('Book', 'C', 23),
+('Clothes', 'A', 9),
+('Clothes', 'B', 11),
+('Clothes', 'C', 7),
+('Elec', 'A', 52),
+('Elec', 'B', 19);
+
+# rollup : 증간 합계 함수
+# group by rollup(ct1, ct2);
+select ct1, ct2, count(*), sum(cnt)
+from price group by ct1, ct2 with rollup;
+
+# cube : 가능한 모든 집계를 계산
+# group by cube(ct1, ct2);
+# 전체 합계
+# ct1별 합계
+# ct2별 합계
+# 일반 데이터
+
+# grouping sets : 소계만 계산
+# group by grouping sets(ct1, ct2);
+# ct1별 합계
+# ct2별 합계
+
+# grouping : 집계 함수 지원(조건에 활용)
+# case grouping(ct1) = 1 then '모든 상품' else ct1
+# NULL이 아닌 내가 원하는 문자열로 조회하기 위해 사용
+
+create table dept(
+    id int auto_increment primary key,
+    name varchar(10));
+   
+insert into dept(name) values('HR'), ('ER'), ('MK');
+
+create table emp(
+     id int auto_increment primary key,
+    name varchar(10),
+    dept_id int,
+    salary decimal(10, 2));
+
+insert into emp(name, dept_id, salary) values
+('Alice', 1, 60000),
+('Bob', 1, 70000),
+('Charlie', 2, 80000),
+('David', 2, 85000),
+('Eve', 3, 50000);
+
+# 스칼라 서브쿼리 : select 절에 사용
+select name, salary,
+(select name from dept where id = emp.dept_id) as dept_name
+from emp;
+
+# 인라인 뷰 : from 절에 사용
+select d.dept_id, d.count, d.avg_sal from
+(select dept_id, count(*) as count, avg(salary) as avg_sal from emp
+group by dept_id) as d;
+
+select dept_id, count(*) as count, avg(salary) as avg_sal from emp
+group by dept_id;
+
+# 중첩 서브쿼리 : where 절에 사용
+select dept_id, count(*) from emp as e
+where salary > (select avg(salary) from emp where dept_id = e.dept_id)
+group by dept_id;
+
+select dept_id, count(*) from emp as e
+where salary > (select avg(salary) from emp)
+group by dept_id;
+
+select e.name, d.name from emp as e, dept as d
+where e.dept_id = d.id;
+------------------------------------------------------------------------------------------------------------
+Day07 Sample database, table
+
+-- 1. 데이터베이스 생성
+CREATE DATABASE sales_db;
+
+-- 2. 데이터베이스 사용
+USE sales_db;
+
+-- 3. 테이블 생성: Customers (고객)
+CREATE TABLE Customers (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_name VARCHAR(100),
+    country VARCHAR(50)
+);
+
+-- 4. 테이블 생성: Orders (주문)
+CREATE TABLE Orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT,
+    product_name VARCHAR(100),
+    price DECIMAL(10, 2),
+    quantity INT,
+    order_date DATE,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+);
+
+-- Customers 테이블에 데이터 삽입
+INSERT INTO Customers (customer_name, country) VALUES
+('John Doe', 'USA'),
+('Jane Smith', 'UK'),
+('Alice Johnson', 'Canada'),
+('Bob Brown', 'Australia'),
+('Charlie Green', 'Germany'),
+('David White', 'France'),
+('Eva Black', 'Italy'),
+('Grace Hall', 'Spain'),
+('Hank Walker', 'Mexico'),
+('Isabella Lee', 'Japan'),
+('Jack King', 'China'),
+('Kevin Miller', 'South Korea'),
+('Luna Gray', 'Russia'),
+('Mike Davis', 'Brazil'),
+('Nina Scott', 'India'),
+('Olivia Carter', 'South Africa'),
+('Paul Adams', 'New Zealand'),
+('Quinn Baker', 'Netherlands'),
+('Rose Harris', 'Sweden'),
+('Sam Wilson', 'Norway');
+
+
+-- Orders 테이블에 데이터 삽입
+INSERT INTO Orders (customer_id, product_name, price, quantity, order_date) VALUES
+(1, 'Laptop', 1200.00, 1, '2023-09-01'),
+(1, 'Smartphone', 800.00, 2, '2023-09-05'),
+(2, 'Desk', 200.00, 1, '2023-09-02'),
+(2, 'Chair', 150.00, 4, '2023-09-07'),
+(3, 'Laptop', 1200.00, 1, '2023-09-03'),
+(3, 'Smartphone', 800.00, 1, '2023-09-10'),
+(4, 'Desk', 200.00, 2, '2023-09-04'),
+(5, 'Chair', 150.00, 3, '2023-09-11'),
+(5, 'Smartphone', 800.00, 2, '2023-09-12'),
+(6, 'Laptop', 1200.00, 1, '2023-09-06'),
+(6, 'Chair', 150.00, 5, '2023-09-08'),
+(7, 'Desk', 200.00, 2, '2023-09-09'),
+(8, 'Smartphone', 800.00, 1, '2023-09-14'),
+(9, 'Laptop', 1200.00, 2, '2023-09-15'),
+(10, 'Chair', 150.00, 1, '2023-09-13'),
+(11, 'Desk', 200.00, 1, '2023-09-16'),
+(12, 'Laptop', 1200.00, 1, '2023-09-17'),
+(13, 'Smartphone', 800.00, 3, '2023-09-18'),
+(14, 'Chair', 150.00, 4, '2023-09-19'),
+(15, 'Desk', 200.00, 2, '2023-09-20'),
+(16, 'Smartphone', 800.00, 2, '2023-09-21'),
+(17, 'Laptop', 1200.00, 1, '2023-09-22'),
+(18, 'Desk', 200.00, 3, '2023-09-23'),
+(19, 'Chair', 150.00, 5, '2023-09-24'),
+(20, 'Laptop', 1200.00, 1, '2023-09-25'),
+-- 70개의 추가 주문 데이터 (제품, 수량, 가격 랜덤 배치)
+(1, 'Desk', 200.00, 1, '2023-09-26'),
+(2, 'Chair', 150.00, 2, '2023-09-27'),
+(3, 'Smartphone', 800.00, 3, '2023-09-28'),
+(4, 'Laptop', 1200.00, 1, '2023-09-29'),
+(5, 'Desk', 200.00, 4, '2023-09-30'),
+(6, 'Chair', 150.00, 5, '2023-10-01'),
+(7, 'Smartphone', 800.00, 2, '2023-10-02'),
+(8, 'Laptop', 1200.00, 1, '2023-10-03'),
+(9, 'Desk', 200.00, 3, '2023-10-04'),
+(10, 'Chair', 150.00, 1, '2023-10-05'),
+(11, 'Smartphone', 800.00, 4, '2023-10-06'),
+(12, 'Laptop', 1200.00, 2, '2023-10-07'),
+(13, 'Chair', 150.00, 5, '2023-10-08'),
+(14, 'Desk', 200.00, 1, '2023-10-09'),
+(15, 'Smartphone', 800.00, 2, '2023-10-10'),
+(16, 'Laptop', 1200.00, 1, '2023-10-11'),
+(17, 'Chair', 150.00, 3, '2023-10-12'),
+(18, 'Smartphone', 800.00, 2, '2023-10-13'),
+(19, 'Desk', 200.00, 1, '2023-10-14'),
+(20, 'Laptop', 1200.00, 4, '2023-10-15'),
+-- 추가 데이터 계속
+(1, 'Smartphone', 800.00, 3, '2023-10-16'),
+(2, 'Desk', 200.00, 1, '2023-10-17'),
+(3, 'Chair', 150.00, 4, '2023-10-18'),
+(4, 'Laptop', 1200.00, 2, '2023-10-19'),
+(5, 'Smartphone', 800.00, 1, '2023-10-20'),
+(6, 'Desk', 200.00, 5, '2023-10-21'),
+(7, 'Chair', 150.00, 3, '2023-10-22'),
+(8, 'Smartphone', 800.00, 2, '2023-10-23'),
+(9, 'Laptop', 1200.00, 1, '2023-10-24'),
+(10, 'Chair', 150.00, 4, '2023-10-25'),
+(11, 'Smartphone', 800.00, 2, '2023-10-26'),
+(12, 'Desk', 200.00, 3, '2023-10-27'),
+(13, 'Laptop', 1200.00, 1, '2023-10-28'),
+(14, 'Chair', 150.00, 5, '2023-10-29'),
+(15, 'Smartphone', 800.00, 1, '2023-10-30'),
+(16, 'Desk', 200.00, 2, '2023-10-31'),
+(17, 'Chair', 150.00, 3, '2023-11-01'),
+(18, 'Smartphone', 800.00, 4, '2023-11-02'),
+(19, 'Desk', 200.00, 2, '2023-11-03'),
+(20, 'Laptop', 1200.00, 1, '2023-11-04');
