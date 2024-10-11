@@ -1,0 +1,192 @@
+drop database if exists Day09;
+create database Day09;
+use Day09;
+
+create table A(
+    n int);
+
+create table B(
+    n int);
+   
+insert into A values(1), (2), (3), (4);
+insert into B values(3), (4), (5), (6);
+
+select * from A;
+select * from B;
+
+select * from A
+union all # 중복이 포함되기 때문에 3,4가 두번씩 등장
+select * from B;
+
+select * from A
+union # 중복이 제거되기 때문에 3,4가 한번씩 등장
+select * from B;
+
+-- 교집합 : 2개의 결과를 대상으로 연산을 진행 -> 같은 값(중복)이 있다면 그 결과를 반환
+select * from A
+intersect # 교집합
+select * from B;
+
+create table C (n int);
+insert into C values (7), (8), (9), (10);
+
+select * from A
+union # 중복이 존재하지 않음
+select * from C;
+
+select * from A
+intersect # 결과 X -> 중복이 없기 때문에 결과도 없음
+select * from C;
+
+-- D 테이블 : 1,2,3,4,5,6
+create table D (n int);
+insert into D values (1), (2), (3), (4), (5), (6);
+-- E 테이블 : 5,6,7,8,9,10
+create table E (n int);
+insert into E values (5), (6), (7), (8), (9), (10);
+-- 1. 합집합 연산 : union, union all
+select * from D
+union # 5,6 한번씩 등장
+select * from E;
+
+select * from D
+union all # 5,6 두번씩 등장
+select * from E;
+
+-- 2. 교집합 연산 : intersect
+select * from D
+intersect # 5,6만 등장
+select * from E;
+
+-- 차집합 : 2개의 결과 집합을 대상으로 연산을 진행 -> 상위 결과 - 하위 결과
+-- select * from A
+-- minus
+-- select * from B;
+
+select * from A
+except # 차집합 연산자
+select * from B;
+
+-- 설명 : A(상위) 결과의 값이 1,2,3,4 B(하위) 결과의 값이 3,4,5,6
+-- 5,6은 매치가 안되기 때문에 제외 -> 3,4는 겹치기 때문에 결과에서 제거 -> 남은 것은 1,2
+select A.n from A left join B on A.n = B.n where B.n is null;
+
+-- 카데시안 곱 : A의 카디널리티(튜플의 개수) X B의 카디널리티(튜플의 개수)
+select * from A, B; # 4 x 4 = 16
+select * from D, E; # 6 x 6 = 36
+
+use mysql;
+select * from user;
+select host, user from user;
+
+create user user1; # 사용자 만들기, 호스트 X, 비밀번호 X
+select host, user from user;
+
+-- 사용자 만들기, 호스트 : localhost, 비밀번호 : 1234
+create user user2@localhost identified by '1234';
+select host, user from user;
+
+-- 사용자 삭제 -> 테이블 삭제 방식, delete 방식
+set sql_safe_updates = 0;
+delete from user where user = 'user1'; # 안전모드 해제 후 진행
+set sql_safe_updates = 1;
+
+-- 사용자 삭제 -> drop 방식
+drop user user2@localhost;
+
+-- 사용자 만들기, 호스트 : localhost, 비밀번호 : 1234
+create user tmp@localhost identified by '1234';
+
+use classicmodels;
+show tables;
+
+-- GRANT : 권한을 부여하는 구문
+grant create on classicmodels to tmp@localhost;
+
+-- DDL, DML의 차이가 존재
+-- DDL : 테이블을 대상으로 연산을 진행 : DB만 명시
+-- DML : 튜플을 대상으로 연산을 진행 : TABLE까지 명시
+
+-- 모든 권한 주기(classicmodels 데이터베이스에 한해서)
+grant all on classicmodels to tmp@localhost;
+show grants for tmp@localhost;
+
+-- DDL과 DML 권한을 부여할 수 있다면 DCL을 부여할 수 있는 권한은?
+-- 다른 사용자에게 권한을 부여하거나 회수할 수 있는 권한도 부여
+grant all on classicmodels to tmp@localhost with grant option;
+
+-- DML 같은 경우는 하단 쿼리처럼 테이블을 명시해야한다
+grant select on classicmodels.orders to tmp@localhost;
+
+-- classicmodels DB 내부 테이블 전체에 insert, delete, update 권한 부여
+grant insert, delete, update on classicmodels.* to tmp@localhost;
+
+-- DROP 권한을 부여할 때는 테이블을 명시해야함 (주의)
+grant drop on classicmodels.* to tmp@localhost;
+
+-- user : DBMS@localhost pw : 1234
+create user DBMS@localhost identified by '1234';
+-- 1. classicmodels에 대한 create 권한 부여
+grant create on classicmodels to DBMS@localhost;
+-- 2. customers TABLE에 대한 select 권한 부여
+grant select on classicmodels.customers to DBMS@localhost;
+-- 3. classicmodels DB에 대한 DDL 권한 부여 + 권한을 부여할 수 있는 권한까지
+grant alter, drop on classicmodels.* to DBMS@localhost with grant option;
+-- 4. classicmodels DB 내부에 모든 테이블에 DML 권한 부여
+grant insert, delete, update on classicmodels.* to DBMS@localhost;
+
+-- REVOKE : 권한 회수
+-- classicmodels DB 내부 테이블들에서 select 권한 회수
+revoke select on classicmodels.* from tmp@localhost;
+
+-- 다른 사용자에게 권한을 부여할 수 있는 grant option도 회수 가능
+-- 한번에 여러 권한을 회수할 수 있음
+-- 현재 DML 권한을 회수하기 때문에 테이블까지 명시
+revoke grant option, update on classicmodels.* from tmp@localhost;
+
+grant all on classicmodels to tmp@localhost;
+-- 권한 전체 회수 -> classicmodels DB에 한해서
+revoke all on classicmodels from tmp@localhost;
+
+-- 부여했던 권한까지 회수
+-- revoke all on classicmodels from tmp@localhost cascade;
+
+-- user : DBMS@localhost pw : 1234
+-- create user DBMS@localhost identified by '1234';
+-- 1. classicmodels에 대한 create 권한 회수
+revoke create on classicmodels from DBMS@localhost;
+-- 2. customers TABLE에 대한 select 권한 회수
+revoke select on classicmodels.customers from DBMS@localhost;
+-- 3. classicmodels DB에 대한 DDL 권한 회수 + 권한을 부여할 수 있는 권한까지
+revoke alter, drop on classicmodels.* from DBMS@localhost;
+-- 4. classicmodels DB 내부에 모든 테이블에 DML 권한 회수
+revoke insert, delete, update on classicmodels.* from DBMS@localhost;
+
+use classicmodels;
+
+-- 윈도우 함수 : 순위 나누기, 순위 함수
+
+-- rank : 순위 구하기, 동일한 값은 동일 순위 (순차적 증가 x, 중간 순위는 비우기)
+-- over 필수
+select customernumber, creditlimit, rank() over (order by creditlimit desc) as 'RANK' from customers;
+
+-- partition by : 구간 나누기, 특정 속성을 기준으로 구간을 나눠서 함수를 적용한다
+-- group by와 비슷한 개념 -> 뭉치지 않고 구간만 나누기
+select country, creditlimit, rank() over (partition by country order by creditlimit desc) as 'RANK' from customers;
+
+use world;
+
+select continent, name, population, rank() over (partition by continent order by population desc) as 'POP_RANK' from country;
+select countrycode, name, population, rank() over (partition by countrycode order by population desc) as 'POP' from city;
+
+use classicmodels;
+
+-- dense_rank : 순차적인 순위 부여, 중간 순위 비우기 X
+select customernumber, creditlimit, dense_rank() over (order by creditlimit desc) as 'RANK' from customers;
+select country, creditlimit, dense_rank() over (partition by country order by creditlimit desc) as 'RANK' from customers;
+
+use world;
+
+select code, population, dense_rank() over (order by population desc) as tmp from country;
+select continent, code, population, dense_rank() over (partition by continent order by population desc) as tmp from country;
+select countrycode, name, population, dense_rank() over (partition by countrycode order by population desc) as tmp from city; 
