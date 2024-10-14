@@ -1,0 +1,93 @@
+drop database if exists Day10;
+create database Day10;
+use Day10;
+
+use classicmodels;
+
+-- row_number : 동일한 값일 때 고유 순위 (1,2,3,4....)
+select customernumber, creditlimit,
+row_number() over (order by creditlimit desc) as tmp
+from customers;
+
+select country, customernumber, creditlimit,
+row_number() over (partition by country order by creditlimit desc) as tmp
+from customers;
+
+-- rank : 동일한 값은 동일 순위, 중간 순위 비우기
+-- dense_rank : 동일한 값은 동일 순위, 중간 순위를 비우지 않는다
+-- row_number : 동일한 값도 개별적인 순위 부여, 모든 결과 튜플이 서로 다른 순위를 가짐
+
+-- first value : 파티션별 첫 번째 속성 값을 가져온다 
+select country, customernumber, creditlimit,
+first_value (creditlimit) over (partition by country) as tmp
+from customers;
+
+-- last_value : 파티션별 마지막 속성 값을 가져온다
+select country, customernumber, creditlimit,
+last_value (creditlimit) over (partition by country) as tmp
+from customers;
+
+-- lag : 이전 튜플의 속성 값을 가져온다
+select customernumber, creditlimit,
+lag (creditlimit) over (order by creditlimit desc) as tmp
+from customers;
+
+-- lead : 다음 튜플의 속성 값을 가져온다
+select customernumber, creditlimit,
+lead (creditlimit) over (order by creditlimit desc) as tmp
+from customers;
+
+-- 전 튜플과의 차이 값 계산하기
+select customernumber, creditlimit,
+lag (creditlimit) over (order by creditlimit desc) as tmp,
+lag (creditlimit) over (order by creditlimit desc) - creditlimit as 'diff' 
+from customers;
+
+-- 다음 튜플과의 차이
+select customernumber, creditlimit,
+lead (creditlimit) over (order by creditlimit desc) as tmp,
+abs(lead(creditlimit) over (order by creditlimit desc) - creditlimit) as 'diff' 
+from customers;
+
+use world;
+
+-- percent_rank : 퍼센트 형식으로 순위를 구하는 함수, 1등이 0 꼴등이 1
+select countrycode, name, population,
+percent_rank() over (partition by countrycode order by population desc) as tmp
+from city;
+
+select continent, name, population,
+percent_rank() over (partition by continent order by population desc) as tmp
+from country;
+
+-- cume_dist : 누적해서 1까지 증가 0으로 시작하지 않음
+select countrycode, name, population,
+cume_dist() over (partition by countrycode order by population desc) as tmp
+from city;
+
+-- ntile : 파티션을 매개변수 값으로 나누는 함수
+select name, population,
+ntile(10) over (order by population desc) as tmp
+from country;
+
+select continent, name, population,
+ntile(4) over (partition by continent order by population desc) as tmp
+from country;
+
+-- 계층형 쿼리 (ORACLE 전용)
+-- 테이블에 계층혈 속성 데이터가 있으면 계층 구조로 조회를 도와주는 쿼리
+-- 연결고리를 만들고 PRIOR 연산자로 계층 구조를 표현
+
+-- connect by prior 자식 = 부모 -> Top Down, 하향식 구조
+-- connect by prior 부모 = 자식 -> Bottom UP, 상향식 구조
+-- start with 부모 is null
+
+-- connect by : 연결고리 생성
+-- prior : 계층 구조 표현
+-- level : 수행 결과의 너비(Depth)를 표현
+-- start with : 시작 조건 파악
+
+-- select 부모, 자식, level
+-- from T1
+-- start with 부모 = 'a'
+-- connect by prior 자식 = 부모 and 부모 = 'c'
